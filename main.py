@@ -1,27 +1,33 @@
 ﻿from textblob import TextBlob
-import sys
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-def analyze_sentiment():
-    print("--- AI Sentiment Analyzer (Running in Docker) ---")
-    
-    while True:
-        user_input = input("\nEnter a sentence (or type 'exit' to quit): ")
-        
-        if user_input.lower() == 'exit':
-            print("Shutting down AI...")
-            break
-            
-        blob = TextBlob(user_input)
-        sentiment = blob.sentiment.polarity
-        
-        if sentiment > 0:
-            mood = "Positive 😊"
-        elif sentiment < 0:
-            mood = "Negative 😠"
-        else:
-            mood = "Neutral 😐"
-            
-        print(f"Detected Sentiment: {mood} (Score: {sentiment:.2f})")
+# Initializing
+app = FastAPI()
 
-if __name__ == "__main__":
-    analyze_sentiment()
+# Defining the Data Model
+class SentimentRequest(BaseModel):
+    text: str
+
+# Creating the Endpoint
+@app.post("/analyze")
+def analyze_sentiment(request: SentimentRequest):
+    blob = TextBlob(request.text)
+    polarity = blob.sentiment.polarity
+            
+    if polarity > 0:
+        mood = "Positive 😊"
+    elif polarity < 0:
+        mood = "Negative 😠"
+    else:
+        mood = "Neutral 😐"
+    return {
+        "received_text": request.text,
+        "sentiment": mood,
+        "score": polarity
+    }
+
+# root check
+@app.get("/")
+def home():
+    return {"message": "AI Sentiment API is running!"}
